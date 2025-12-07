@@ -117,11 +117,31 @@ def main():
             logger.error(f"FFmpeg failed: {e}. Uploading original video.")
             upload_file = video_path
 
+        # Translate Title and Description
+        from deep_translator import GoogleTranslator
+        
+        try:
+            translator = GoogleTranslator(source='auto', target='en')
+            translated_title = translator.translate(video_title)
+            translated_desc = translator.translate(download_result['desc'])
+            
+            final_title = f"{video_title} | {translated_title}"
+            final_description = (
+                f"{download_result['desc']}\n\n"
+                f"--- English Translation ---\n"
+                f"{translated_desc}\n\n"
+                f"Original: https://www.xiaohongshu.com/explore/{download_result['id']}"
+            )
+        except Exception as e:
+            logger.error(f"Translation failed: {e}. Using original metadata.")
+            final_title = f"{video_title} [Eng Sub]"
+            final_description = f"{download_result['desc']}\n\nOriginal: https://www.xiaohongshu.com/explore/{download_result['id']}"
+
         video_id = uploader.upload_video(
             file_path=upload_file,
-            title=f"{video_title} [Eng Sub]",
-            description=f"{download_result['desc']}\n\nOriginal: https://www.xiaohongshu.com/explore/{download_result['id']}",
-            privacy_status="public" # User wants to upload to YouTube so presumably public
+            title=final_title,
+            description=final_description,
+            privacy_status="public" 
         )
 
         if video_id:
