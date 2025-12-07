@@ -1,0 +1,49 @@
+name: Daily Video Sync
+
+on:
+  schedule:
+    # Runs at 00:00, 05:00, 10:00, 15:00 UTC (4 times a day, 5 hours apart... roughly)
+    - cron: '0 0,5,10,15 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to commit history.json
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install system dependencies (FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+          # Setup whisper cache to avoid re-downloading model every time if possible? 
+          # GitHub action cache might be needed for the 500MB+ model if bandwidth is an issue, 
+          # but for now standard download is fine.
+
+      - name: Run Orchestrator
+        env:
+          XHS_COOKIE: ${{ secrets.XHS_COOKIE }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python -m src.main
+
+      - name: Commit history
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add history.json
+          git commit -m "Update download history" || echo "No changes to commit"
+          git push
