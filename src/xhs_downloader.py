@@ -37,6 +37,7 @@ def sign(uri, data=None, a1="", web_session=""):
              # We assume single value per key as per xhs library usage
              clean_params = {k: v[0] for k, v in query_params.items()}
              
+             logger.info(f"Signing GET: uri={uri} path={path} params={clean_params}")
              headers = xs_client.sign_headers_get(uri=path, cookies=cookies, params=clean_params)
         else:
              # POST request
@@ -47,8 +48,10 @@ def sign(uri, data=None, a1="", web_session=""):
                      payload = json.loads(data)
                  except:
                      pass
+             logger.info(f"Signing POST: uri={uri}")
              headers = xs_client.sign_headers_post(uri=uri, cookies=cookies, payload=payload)
              
+        logger.info(f"Generated Headers: {headers}")
         return headers
     except Exception as e:
         logger.error(f"Error generating signature: {e}")
