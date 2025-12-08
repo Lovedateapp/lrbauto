@@ -31,7 +31,9 @@ def sign(uri, data=None, a1="", web_session=""):
              # We need to separate them for xhshow to sign correctly
              parsed = urlparse(uri)
              path = parsed.path
-             query_params = parse_qs(parsed.query)
+             # IMPORTANT: keep_blank_values=True is required because xhs sends empty params (e.g. cursor=)
+             # and if we drop them, the signature won't match what the server expects.
+             query_params = parse_qs(parsed.query, keep_blank_values=True)
              
              # Flatten params: parse_qs returns {'k': ['v']}, we need {'k': 'v'}
              # We assume single value per key as per xhs library usage
