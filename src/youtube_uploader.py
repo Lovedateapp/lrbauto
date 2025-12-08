@@ -23,11 +23,19 @@ class YouTubeUploader:
     def _get_credentials(self, client_secrets, refresh_token):
         try:
             # Construct credentials object directly from the provided refresh token and client config
+            # Determine the key for client secrets (installed vs web)
+            if "installed" in client_secrets:
+                cs = client_secrets["installed"]
+            elif "web" in client_secrets:
+                cs = client_secrets["web"]
+            else:
+                cs = client_secrets # Fallback if keys are top-level
+
             creds = Credentials.from_authorized_user_info(
                 info={
                     "refresh_token": refresh_token,
-                    "client_id": client_secrets["installed"]["client_id"],
-                    "client_secret": client_secrets["installed"]["client_secret"],
+                    "client_id": cs["client_id"],
+                    "client_secret": cs["client_secret"],
                 },
                 scopes=SCOPES
             )
