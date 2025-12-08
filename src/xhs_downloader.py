@@ -6,6 +6,7 @@ from src.utils import clean_filename
 
 from xhshow import Xhshow
 import json
+from urllib.parse import urlparse, parse_qs
 
 logger = logging.getLogger("LRBAuto")
 
@@ -26,7 +27,17 @@ def sign(uri, data=None, a1="", web_session=""):
         # Check if it's a GET or POST based on 'data'
         if data is None:
              # GET request
-             headers = xs_client.sign_headers_get(uri=uri, cookies=cookies)
+             # xhs passes the full relative URI with query params (e.g. /api/...?k=v)
+             # We need to separate them for xhshow to sign correctly
+             parsed = urlparse(uri)
+             path = parsed.path
+             query_params = parse_qs(parsed.query)
+             
+             # Flatten params: parse_qs returns {'k': ['v']}, we need {'k': 'v'}
+             # We assume single value per key as per xhs library usage
+             clean_params = {k: v[0] for k, v in query_params.items()}
+             
+             headers = xs_client.sign_headers_get(uri=path, cookies=cookies, params=clean_params)
         else:
              # POST request
              # Ensure data is a dict for xhshow
