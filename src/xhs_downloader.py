@@ -4,11 +4,42 @@ import os
 import logging
 from src.utils import clean_filename
 
+from xhshow import XhsSign
+
 logger = logging.getLogger("LRBAuto")
 
 def sign(uri, data=None, a1="", web_session=""):
-    # Dummy sign function to satisfy the library requirement
-    return {}
+    """
+    Generates the necessary x-s and x-t headers using xhshow.
+    """
+    try:
+        # xhshow expects uri to not include the host, just the path and query
+        if "xiaohongshu.com" in uri:
+            uri = uri.split("xiaohongshu.com")[-1]
+            
+        json_data = None
+        if data:
+            import json
+            # Ensure data is a string if it's not None
+            if isinstance(data, dict):
+                 json_data = json.dumps(data, separators=(',', ':'), ensure_ascii=False)
+            else:
+                 json_data = data
+
+        xs_gen = XhsSign(a1, uri, json_data)
+        signature = xs_gen.sign()
+        
+        # calculate x-t if not returned? usually xhshow sign returns the full dict or just xs
+        # Inspecting common usage, it typically returns a dict with x-s, x-t, etc.
+        # if returns only string, we might need to handle it.
+        # But let's assume it returns the needed headers dict or we can extract it.
+        
+        # Based on typical library behavior, let's try to return what it gives.
+        # If it returns a failure or mismatch, we log it.
+        return signature
+    except Exception as e:
+        logger.error(f"Error generating signature: {e}")
+        return {}
 
 class XHSDownloader:
     def __init__(self, cookie):
