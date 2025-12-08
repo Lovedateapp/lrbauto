@@ -6,10 +6,14 @@ from src.utils import clean_filename
 
 logger = logging.getLogger("LRBAuto")
 
+def sign(uri, data=None, a1="", web_session=""):
+    # Dummy sign function to satisfy the library requirement
+    return {}
+
 class XHSDownloader:
     def __init__(self, cookie):
         self.cookie = cookie
-        self.client = XhsClient(cookie=cookie)
+        self.client = XhsClient(cookie=cookie, sign=sign)
 
     def get_latest_videos(self, user_id, limit=10):
         """
