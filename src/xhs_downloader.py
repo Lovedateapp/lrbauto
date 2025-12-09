@@ -1,4 +1,5 @@
 import requests
+import traceback
 from xhs import XhsClient
 import os
 import logging
@@ -130,4 +131,5 @@ class XHSDownloader:
 
         except Exception as e:
             logger.error(f"Error downloading video {note_id}: {e}")
+            logger.error(traceback.format_exc())
             return None
