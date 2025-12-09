@@ -64,6 +64,23 @@ class XHSDownloader:
     def __init__(self, cookie):
         self.cookie = cookie
         self.client = XhsClient(cookie=cookie, sign=sign)
+        
+        # Monkeypatch: Inject missing Verifytype header to prevent library crash
+        try:
+            # Access private session with name mangling
+            session = self.client._XhsClient__session
+            # Ensure hooks are initialized
+            if not session.hooks.get('response'):
+                session.hooks['response'] = []
+            session.hooks['response'].append(self._inject_verify_type)
+        except Exception as e:
+            logger.warning(f"Could not patch XhsClient session: {e}")
+
+    @staticmethod
+    def _inject_verify_type(response, *args, **kwargs):
+        if 'Verifytype' not in response.headers:
+             response.headers['Verifytype'] = '0'
+        return response
 
     def get_latest_videos(self, user_id, limit=10):
         """
