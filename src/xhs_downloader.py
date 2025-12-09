@@ -72,14 +72,16 @@ class XHSDownloader:
             # Ensure hooks are initialized
             if not session.hooks.get('response'):
                 session.hooks['response'] = []
-            session.hooks['response'].append(self._inject_verify_type)
+            session.hooks['response'].append(self._inject_missing_headers)
         except Exception as e:
             logger.warning(f"Could not patch XhsClient session: {e}")
 
     @staticmethod
-    def _inject_verify_type(response, *args, **kwargs):
+    def _inject_missing_headers(response, *args, **kwargs):
         if 'Verifytype' not in response.headers:
              response.headers['Verifytype'] = '0'
+        if 'Verifyuuid' not in response.headers:
+             response.headers['Verifyuuid'] = '0'
         return response
 
     def get_latest_videos(self, user_id, limit=10):
