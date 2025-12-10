@@ -18,6 +18,29 @@ class BilibiliDownloader:
         self.user_url = f"https://space.bilibili.com/{user_id}"
         self.download_dir = "downloads"
         os.makedirs(self.download_dir, exist_ok=True)
+        
+        # Load Bilibili cookies from environment variables
+        self.cookies = self._load_cookies()
+    
+    def _load_cookies(self):
+        """
+        Load Bilibili cookies from environment variables.
+        
+        Returns:
+            str: Cookie string formatted for yt-dlp, or None if not available
+        """
+        sessdata = os.environ.get("BILIBILI_SESSDATA", "")
+        bili_jct = os.environ.get("BILIBILI_BILI_JCT", "")
+        buvid3 = os.environ.get("BILIBILI_BUVID3", "")
+        
+        if sessdata and bili_jct and buvid3:
+            # Format cookies as string for yt-dlp
+            cookie_str = f"SESSDATA={sessdata}; bili_jct={bili_jct}; buvid3={buvid3}"
+            logger.info("Bilibili cookies loaded successfully")
+            return cookie_str
+        else:
+            logger.warning("Bilibili cookies not found in environment variables. Downloads may fail due to anti-bot protection.")
+            return None
     
     def get_latest_videos(self, limit=10):
         """
@@ -43,6 +66,7 @@ class BilibiliDownloader:
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
                     'Referer': 'https://www.bilibili.com/',
+                    'Cookie': self.cookies if self.cookies else '',
                 },
             }
             
@@ -105,6 +129,7 @@ class BilibiliDownloader:
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
                     'Referer': 'https://www.bilibili.com/',
+                    'Cookie': self.cookies if self.cookies else '',
                 },
             }
             
@@ -143,6 +168,9 @@ class BilibiliDownloader:
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
+                'http_headers': {
+                    'Cookie': self.cookies if self.cookies else '',
+                },
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:

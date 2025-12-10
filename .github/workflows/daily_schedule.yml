@@ -35,6 +35,9 @@ jobs:
 
       - name: Run Orchestrator
         env:
+          BILIBILI_SESSDATA: ${{ secrets.BILIBILI_SESSDATA }}
+          BILIBILI_BILI_JCT: ${{ secrets.BILIBILI_BILI_JCT }}
+          BILIBILI_BUVID3: ${{ secrets.BILIBILI_BUVID3 }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python -m src.main
