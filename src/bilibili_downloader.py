@@ -32,11 +32,18 @@ class BilibiliDownloader:
         try:
             logger.info(f"Fetching latest {limit} videos from Bilibili user {self.user_id}")
             
+            # Add realistic browser headers to avoid anti-bot detection
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,  # Only extract metadata, don't download
                 'playlistend': limit,  # Limit number of videos
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                    'Referer': 'https://www.bilibili.com/',
+                },
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -85,6 +92,7 @@ class BilibiliDownloader:
             safe_title = clean_filename(video_title)
             output_template = os.path.join(self.download_dir, f"{video_id}_{safe_title}.%(ext)s")
             
+            # Add realistic browser headers to avoid anti-bot detection
             ydl_opts = {
                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                 'outtmpl': output_template,
@@ -92,6 +100,12 @@ class BilibiliDownloader:
                 'no_warnings': False,
                 'merge_output_format': 'mp4',  # Ensure output is mp4
                 'max_filesize': 500 * 1024 * 1024,  # 500MB limit
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                    'Referer': 'https://www.bilibili.com/',
+                },
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
