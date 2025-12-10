@@ -35,7 +35,6 @@ jobs:
 
       - name: Run Orchestrator
         env:
-          XHS_COOKIE: ${{ secrets.XHS_COOKIE }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
         run: python -m src.main

@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from src.utils import load_history, mark_video_downloaded, is_video_downloaded
-from src.xhs_downloader import XHSDownloader
+from src.bilibili_downloader import BilibiliDownloader
 from src.subtitle_gen import SubtitleGenerator
 from src.youtube_uploader import YouTubeUploader
 
@@ -11,17 +11,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("LRBAuto")
 
 # Constants
-XHS_USER_ID = "665c135f000000000d0277de"
+BILIBILI_USER_ID = "1966850363"  # Bilibili UID
 DOWNLOAD_LIMIT_PER_RUN = 1 # Process 1 video per run to stay within limits/time, or loop for more
 
 def main():
     # Load configuration from environment variables
-    xhs_cookie = os.environ.get("XHS_COOKIE")
     youtube_client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
     youtube_refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN")
 
-    if not all([xhs_cookie, youtube_client_secret, youtube_refresh_token]):
-        logger.error("Missing environment variables. Please check XHS_COOKIE, YOUTUBE_CLIENT_SECRET, and YOUTUBE_REFRESH_TOKEN.")
+    if not all([youtube_client_secret, youtube_refresh_token]):
+        logger.error("Missing environment variables. Please check YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN.")
         return
 
     try:
@@ -32,14 +31,14 @@ def main():
 
     # Initialize components
     history = load_history()
-    downloader = XHSDownloader(cookie=xhs_cookie)
+    downloader = BilibiliDownloader(user_id=BILIBILI_USER_ID)
     # Lazy load Whisper only if needed to save startup time? No, might as well load it.
     subtitle_gen = SubtitleGenerator(model_name="small") # Use 'small' for better quality than 'base'
     uploader = YouTubeUploader(youtube_client_secrets_json, youtube_refresh_token)
 
     # 1. Check for new videos
     logger.info("Checking for new videos...")
-    latest_videos = downloader.get_latest_videos(XHS_USER_ID, limit=10) # Fetch more to find un-downloaded ones
+    latest_videos = downloader.get_latest_videos(limit=10) # Fetch more to find un-downloaded ones
     
     videos_processed = 0
     
@@ -57,12 +56,10 @@ def main():
         logger.info(f"Processing new video: {video_title}")
 
         # 2. Download
-        download_result = downloader.download_video(video_id)
-        if not download_result:
+        video_path = downloader.download_video(video_id, video_title)
+        if not video_path:
             logger.error("Download failed. Skipping.")
             continue
-        
-        video_path = download_result['path']
         
         # 3. Generate Subtitles
         srt_path = subtitle_gen.generate_subtitle_file(video_path)
@@ -120,22 +117,26 @@ def main():
         # Translate Title and Description
         from deep_translator import GoogleTranslator
         
+        # Get video description
+        video_info = downloader.get_video_info(video_id)
+        video_desc = video_info.get('description', '')
+        
         try:
             translator = GoogleTranslator(source='auto', target='en')
             translated_title = translator.translate(video_title)
-            translated_desc = translator.translate(download_result['desc'])
+            translated_desc = translator.translate(video_desc) if video_desc else ''
             
             final_title = f"{video_title} | {translated_title}"
             final_description = (
-                f"{download_result['desc']}\n\n"
+                f"{video_desc}\n\n"
                 f"--- English Translation ---\n"
                 f"{translated_desc}\n\n"
-                f"Original: https://www.xiaohongshu.com/explore/{download_result['id']}"
+                f"Original: https://www.bilibili.com/video/{video_id}"
             )
         except Exception as e:
             logger.error(f"Translation failed: {e}. Using original metadata.")
             final_title = f"{video_title} [Eng Sub]"
-            final_description = f"{download_result['desc']}\n\nOriginal: https://www.xiaohongshu.com/explore/{download_result['id']}"
+            final_description = f"{video_desc}\n\nOriginal: https://www.bilibili.com/video/{video_id}"
 
         video_id = uploader.upload_video(
             file_path=upload_file,
@@ -145,7 +146,7 @@ def main():
         )
 
         if video_id:
-            mark_video_downloaded(download_result['id'], history)
+            mark_video_downloaded(video['id'], history)
             videos_processed += 1
             
     if videos_processed == 0:
