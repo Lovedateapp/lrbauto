@@ -48,7 +48,7 @@ class YouTubeUploader:
             logger.error(f"Error authenticating with YouTube: {e}")
             raise
 
-def create_bilingual_title(self, chinese_title: str, english_title: str) -> str:
+    def create_bilingual_title(self, chinese_title: str, english_title: str) -> str:
         """
         Create a bilingual title in format: Chinese | English
         
