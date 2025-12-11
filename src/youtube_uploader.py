@@ -75,34 +75,37 @@ class YouTubeUploader:
     
     def create_bilingual_description(self, chinese_title: str, english_title: str,
                                     chinese_desc: str, english_desc: str,
-                                    original_url: str = "") -> str:
+                                    summary: str = "", tags: list = None) -> str:
         """
-        Create a bilingual description with both Chinese and English.
+        Create a clean bilingual description with summary and tags.
+        """
+        description_parts = []
         
-        Args:
-            chinese_title: Original Chinese title
-            english_title: Translated English title
-            chinese_desc: Original Chinese description
-            english_desc: Translated English description
-            original_url: URL to original video
+        # 1. Bilingual Title (clean)
+        description_parts.append(f"{chinese_title}")
+        description_parts.append(f"{english_title}")
+        description_parts.append("")
+        
+        # 2. Conclusion / Summary (New requirement)
+        if summary:
+            description_parts.append("★ Video Summary / 视频总结:")
+            description_parts.append(summary)
+            description_parts.append("")
             
-        Returns:
-            Bilingual description string
-        """
-        description_parts = [
-            f"原标题: {chinese_title}",
-            f"Original Title: {english_title}",
-            "",
-            chinese_desc,
-            "",
-            english_desc,
-        ]
-        
-        if original_url:
-            description_parts.extend([
-                "",
-                f"Original video: {original_url}"
-            ])
+        # 3. Bilingual Description body
+        if chinese_desc and chinese_desc != chinese_title:
+             description_parts.append(chinese_desc)
+             description_parts.append("")
+             
+        if english_desc and english_desc != english_title:
+             description_parts.append(english_desc)
+             description_parts.append("")
+
+        # 4. Tags at the bottom
+        if tags:
+            tag_line = " ".join([f"#{t.replace(' ', '')}" for t in tags[:15]])
+            description_parts.append("")
+            description_parts.append(tag_line)
         
         description = "\n".join(description_parts)
         
@@ -115,41 +118,34 @@ class YouTubeUploader:
     def generate_tags(self, chinese_title: str, english_title: str, 
                      chinese_tags: list = None) -> list:
         """
-        Generate tags from titles and optional Chinese tags.
-        
-        Args:
-            chinese_title: Original Chinese title
-            english_title: Translated English title
-            chinese_tags: Optional list of Chinese tags
-            
-        Returns:
-            List of tags
+        Generate tags ensuring at least 6 relevant tags.
         """
         tags = []
         
-        # Add words from English title (split and filter)
+        # 1. Extract from titles
         english_words = [w.strip().lower() for w in english_title.split() 
-                        if len(w.strip()) > 2]
-        tags.extend(english_words[:5])  # Limit to 5 words from title
+                        if len(w.strip()) > 3 and w.isalpha()]
+        tags.extend(english_words[:5])
         
-        # Add Chinese tags if provided
+        # 2. Add Chinese tags if provided
         if chinese_tags:
-            tags.extend(chinese_tags[:5])  # Limit to 5 Chinese tags
+            tags.extend(chinese_tags[:8])
+            
+        # 3. Add default context tags
+        defaults = ["science", "experiment", "diy", "lifehacks", "tutorial", "fun", "china", "video"]
+        tags.extend(defaults)
         
-        # Add default tags
-        tags.extend(["china", "chinese", "中国"])
-        
-        # Remove duplicates while preserving order
+        # 4. Filter duplicates and short words
         seen = set()
         unique_tags = []
         for tag in tags:
-            if tag.lower() not in seen:
-                seen.add(tag.lower())
-                unique_tags.append(tag)
+            tag_clean = tag.lower().strip()
+            if len(tag_clean) > 2 and tag_clean not in seen:
+                seen.add(tag_clean)
+                unique_tags.append(tag_clean)
         
-        # YouTube allows max 500 characters total for tags
-        # Limit to ~30 tags to be safe
-        return unique_tags[:30]
+        # Ensure we have at least 6 tags
+        return unique_tags[:40]
     
     def upload_video(self, file_path, title, description, category_id="22", 
                     privacy_status="private", tags=None):

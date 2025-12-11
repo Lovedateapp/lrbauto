@@ -6,6 +6,7 @@ from src.local_video_processor import LocalVideoProcessor
 from src.remote_video_processor import RemoteVideoProcessor
 from src.subtitle_gen import SubtitleGenerator
 from src.youtube_uploader import YouTubeUploader
+from src.summarizer import SimpleSummarizer
 from deep_translator import GoogleTranslator
 
 # Configure logging
@@ -45,6 +46,7 @@ def main():
     subtitle_gen = SubtitleGenerator(model_name="small")
     uploader = YouTubeUploader(youtube_client_secrets_json, youtube_refresh_token)
     translator = GoogleTranslator(source='zh-CN', target='en')
+    summarizer = SimpleSummarizer() # Initialize summarizer
 
     # 1. Check for new videos
     logger.info("Checking for new videos...")
@@ -130,14 +132,23 @@ def main():
                 english_title = "Chinese Video"
                 english_desc = "Video from China"
             
-            # 5. Create bilingual content
+            # 4.5 Generate Summary from Subtitles (New Step)
+            logger.info("Generating video summary from subtitles...")
+            srt_text = summarizer.extract_text_from_srt(subtitle_path)
+            video_summary = summarizer.summarize(srt_text)
+            if video_summary:
+                logger.info(f"Generated summary: {video_summary[:50]}...")
+            
+            # 5. Create bilingual content (Updated method signature)
             bilingual_title = uploader.create_bilingual_title(chinese_title, english_title)
+            tags = uploader.generate_tags(chinese_title, english_title, chinese_tags)
+            
             bilingual_desc = uploader.create_bilingual_description(
                 chinese_title, english_title,
                 chinese_desc, english_desc,
-                original_url
+                summary=video_summary,
+                tags=tags
             )
-            tags = uploader.generate_tags(chinese_title, english_title, chinese_tags)
             
             logger.info(f"Bilingual title: {bilingual_title}")
             logger.info(f"Generated {len(tags)} tags")
@@ -149,7 +160,7 @@ def main():
                 title=bilingual_title,
                 description=bilingual_desc,
                 tags=tags,
-                privacy_status="private"  # Change to "public" when ready
+                privacy_status="public"  # Changed to public as requested
             )
             
             if video_id:
