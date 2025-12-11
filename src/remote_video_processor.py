@@ -210,3 +210,17 @@ class RemoteVideoProcessor:
             return items
         except:
             return []
+
+    def download_file(self, url: str, local_path: str) -> bool:
+        """Download a file from a URL to a local path"""
+        try:
+            logger.info(f"Downloading {url} to {local_path}")
+            with requests.get(url, stream=True, timeout=120) as r:
+                r.raise_for_status()
+                with open(local_path, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to download {url}: {e}")
+            return False
