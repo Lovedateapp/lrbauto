@@ -40,6 +40,7 @@ jobs:
           BILIBILI_BUVID3: ${{ secrets.BILIBILI_BUVID3 }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          REMOTE_VIDEO_URL: "https://chat.ainewskit.com/vdos/"
         run: python -m src.main
 
       - name: Commit history

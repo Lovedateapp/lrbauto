@@ -6,3 +6,4 @@ google-auth-httplib2
 requests
 moviepy==1.0.3
 deep-translator
+beautifulsoup4
