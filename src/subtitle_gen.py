@@ -10,7 +10,7 @@ class SubtitleGenerator:
         logger.info(f"Loading Whisper model: {model_name}")
         self.model = whisper.load_model(model_name)
 
-    def generate_subtitle_file(self, video_path):
+    def generate_subtitles(self, video_path):
         """
         Generates English subtitles for the given video.
         Returns the path to the SRT file.
