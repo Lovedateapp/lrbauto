@@ -44,3 +44,56 @@ class SubtitleGenerator:
         seconds = seconds % 60
         milliseconds = int((seconds - int(seconds)) * 1000)
         return f"{hours:02d}:{minutes:02d}:{int(seconds):02d},{milliseconds:03d}"
+
+    def burn_subtitles(self, video_path, subtitle_path):
+        """
+        Burns subtitles into video using ffmpeg directly.
+        Returns the path to the new video file or None on failure.
+        """
+        import subprocess
+        
+        try:
+            output_path = video_path.rsplit('.', 1)[0] + "_subtitled.mp4"
+            logger.info(f"Burning subtitles: {video_path} + {subtitle_path} -> {output_path}")
+            
+            # Use absolute paths to avoid FFmpeg confusion
+            abs_video_path = os.path.abspath(video_path)
+            abs_sub_path = os.path.abspath(subtitle_path)
+            abs_output_path = os.path.abspath(output_path)
+            
+            # Escape path for FFmpeg filter:
+            # 1. Escape backslashes first (for Windows paths or weird chars)
+            # 2. Escape colons (filter separator)
+            # 3. Escape single quotes (we wrap path in single quotes)
+            filter_path = abs_sub_path.replace('\\', '/').replace(':', '\\:').replace("'", "'\\''")
+            
+            cmd = [
+                'ffmpeg', '-y',
+                '-i', abs_video_path,
+                '-vf', f"subtitles='{filter_path}'",
+                '-c:a', 'copy',
+                abs_output_path
+            ]
+            
+            logger.info(f"Running ffmpeg command: {cmd}")
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            if os.path.exists(abs_output_path) and os.path.getsize(abs_output_path) > 0:
+                logger.info(f"Successfully burned subtitles: {abs_output_path}")
+                return abs_output_path
+            else:
+                logger.error("FFmpeg ran but output file is missing or empty")
+                return None
+                
+        except subprocess.CalledProcessError as e:
+            logger.error(f"FFmpeg failed: {e.stderr}")
+            return None
+        except Exception as e:
+            logger.error(f"Error burning subtitles: {e}")
+            return None
