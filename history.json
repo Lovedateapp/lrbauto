@@ -1,3 +1,12 @@
 {
-    "processed_videos": []
+    "processed_videos": [],
+    "processed_metadata": {
+        "10个在家就能做的科学小实验": {
+            "title": "10个在家就能做的科学小实验",
+            "url": "https://chat.ainewskit.com/vdos/"
+        }
+    },
+    "downloaded_ids": [
+        "10个在家就能做的科学小实验"
+    ]
 }
