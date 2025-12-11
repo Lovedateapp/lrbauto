@@ -123,7 +123,7 @@ class RemoteVideoProcessor:
                     metadata = {
                         "id": unique_id,
                         "title": unique_id,
-                        "description": f"{unique_id} - Video shared from {self.base_url}",
+                        "description": f"{unique_id}",
                         "url": self.base_url,
                         "tags": ["video", "auto-upload"]
                     }

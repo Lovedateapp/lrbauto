@@ -10,6 +10,8 @@ logger = logging.getLogger("LRBAuto")
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
+import jieba
+
 class YouTubeUploader:
     def __init__(self, client_secrets, refresh_token):
         """
@@ -122,30 +124,42 @@ class YouTubeUploader:
         """
         tags = []
         
-        # 1. Extract from titles
+        # 1. Extract from Chinese title (using jieba)
+        try:
+            # Cut title into words
+            seg_list = jieba.cut(chinese_title)
+            # Filter out short words and non-keywords (heuristically)
+            cn_words = [w for w in seg_list if len(w) > 1 and w.strip()]
+            tags.extend(cn_words[:5]) # Top 5 Chinese keywords
+        except Exception:
+            # Fallback if jieba fails
+            tags.append(chinese_title[:10]) 
+
+        # 2. Extract from English title
         english_words = [w.strip().lower() for w in english_title.split() 
                         if len(w.strip()) > 3 and w.isalpha()]
         tags.extend(english_words[:5])
         
-        # 2. Add Chinese tags if provided
+        # 3. Add provided Chinese tags if any
         if chinese_tags:
             tags.extend(chinese_tags[:8])
             
-        # 3. Add default context tags
-        defaults = ["science", "experiment", "diy", "lifehacks", "tutorial", "fun", "china", "video"]
+        # 4. Add default context tags
+        defaults = ["science", "experiment", "diy", "lifehacks", "tutorial", "fun", "china", "video", "科学", "实验", "科普"]
         tags.extend(defaults)
         
-        # 4. Filter duplicates and short words
+        # 5. Filter duplicates
         seen = set()
         unique_tags = []
         for tag in tags:
             tag_clean = tag.lower().strip()
-            if len(tag_clean) > 2 and tag_clean not in seen:
+            # Simple deduplication
+            if len(tag_clean) > 1 and tag_clean not in seen:
                 seen.add(tag_clean)
                 unique_tags.append(tag_clean)
         
         # Ensure we have at least 6 tags
-        return unique_tags[:40]
+        return unique_tags[:45]
     
     def upload_video(self, file_path, title, description, category_id="22", 
                     privacy_status="private", tags=None):
