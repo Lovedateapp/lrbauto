@@ -61,7 +61,10 @@ class YouTubeUploader:
         Returns:
             Bilingual title string
         """
-        bilingual = f"{chinese_title} | {english_title}"
+        if not english_title or english_title.strip().lower() == chinese_title.strip().lower():
+            bilingual = chinese_title
+        else:
+            bilingual = f"{chinese_title} | {english_title}"
         # YouTube title limit is 100 characters
         if len(bilingual) > 100:
             # Truncate English part if too long
@@ -85,16 +88,23 @@ class YouTubeUploader:
         
         # 1. Bilingual Title (clean)
         description_parts.append(f"{chinese_title}")
-        description_parts.append(f"{english_title}")
+        if english_title and english_title.strip().lower() != chinese_title.strip().lower():
+            description_parts.append(f"{english_title}")
         description_parts.append("")
-        
-        # 2. Conclusion / Summary (New requirement)
+
+        # 2. Song context
+        description_parts.append(
+            "A sweet and happy children's song for toddlers, preschool, and family sing-along time."
+        )
+        description_parts.append("")
+
+        # 3. Conclusion / Summary
         if summary:
-            description_parts.append("★ Video Summary / 视频总结:")
+            description_parts.append("★ Lyrics Highlights / 歌词摘要:")
             description_parts.append(summary)
             description_parts.append("")
             
-        # 3. Bilingual Description body
+        # 4. Bilingual Description body
         if chinese_desc and chinese_desc != chinese_title:
              description_parts.append(chinese_desc)
              description_parts.append("")
@@ -103,7 +113,7 @@ class YouTubeUploader:
              description_parts.append(english_desc)
              description_parts.append("")
 
-        # 4. Tags at the bottom
+        # 5. Tags at the bottom
         if tags:
             tag_line = " ".join([f"#{t.replace(' ', '')}" for t in tags[:15]])
             description_parts.append("")
@@ -144,8 +154,21 @@ class YouTubeUploader:
         if chinese_tags:
             tags.extend(chinese_tags[:8])
             
-        # 4. Add default context tags
-        defaults = ["science", "experiment", "diy", "lifehacks", "tutorial", "fun", "china", "video", "科学", "实验", "科普"]
+        # 4. Add default children-song context tags
+        defaults = [
+            "children songs",
+            "kids songs",
+            "nursery rhyme",
+            "happy song",
+            "sweet song",
+            "sing along",
+            "toddler songs",
+            "preschool songs",
+            "kindergarten songs",
+            "儿童歌曲",
+            "儿歌",
+            "快乐儿歌"
+        ]
         tags.extend(defaults)
         
         # 5. Filter duplicates
@@ -161,8 +184,8 @@ class YouTubeUploader:
         # Ensure we have at least 6 tags
         return unique_tags[:45]
     
-    def upload_video(self, file_path, title, description, category_id="22", 
-                    privacy_status="private", tags=None):
+    def upload_video(self, file_path, title, description, category_id="10",
+                    privacy_status="private", tags=None, made_for_kids=True):
         """
         Uploads a video to YouTube.
         
@@ -188,7 +211,7 @@ class YouTubeUploader:
                 },
                 "status": {
                     "privacyStatus": privacy_status,
-                    "selfDeclaredMadeForKids": False
+                    "selfDeclaredMadeForKids": bool(made_for_kids)
                 }
             }
 

@@ -1,7 +1,6 @@
 import whisper
 import os
 import logging
-from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 
 logger = logging.getLogger("LRBAuto")
 
@@ -12,13 +11,13 @@ class SubtitleGenerator:
 
     def generate_subtitles(self, video_path):
         """
-        Generates English subtitles for the given video.
+        Transcribes subtitles for the given media file.
         Returns the path to the SRT file.
         """
         try:
             logger.info(f"Transcribing {video_path}...")
-            result = self.model.transcribe(video_path, task="translate", language="Chinese") # Translate Chinese audio to English text
-            
+            result = self.model.transcribe(video_path, task="transcribe", fp16=False)
+
             srt_path = video_path.rsplit('.', 1)[0] + ".srt"
             
             with open(srt_path, "w", encoding="utf-8") as f:

@@ -20,7 +20,7 @@ def main():
     # Load configuration from environment variables
     youtube_client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
     youtube_refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN")
-    remote_video_url = os.environ.get("REMOTE_VIDEO_URL", "https://chat.ainewskit.com/vdos/") # Default to user provided URL
+    remote_video_url = os.environ.get("REMOTE_VIDEO_URL", "https://chat.ainewskit.com/mp3tomp4/") # Default to MP3+image assets
 
     if not all([youtube_client_secret, youtube_refresh_token]):
         logger.error("Missing environment variables. Please check YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN.")
@@ -45,7 +45,7 @@ def main():
 
     subtitle_gen = SubtitleGenerator(model_name="small")
     uploader = YouTubeUploader(youtube_client_secrets_json, youtube_refresh_token)
-    translator = GoogleTranslator(source='zh-CN', target='en')
+    translator = GoogleTranslator(source='auto', target='en')
     summarizer = SimpleSummarizer() # Initialize summarizer
 
     # 1. Check for new videos
@@ -129,8 +129,8 @@ def main():
             except Exception as e:
                 logger.error(f"Translation failed: {e}")
                 # Use fallback
-                english_title = "Chinese Video"
-                english_desc = "Video from China"
+                english_title = chinese_title
+                english_desc = chinese_desc
             
             # 4.5 Generate Summary from Subtitles (New Step)
             logger.info("Generating video summary from subtitles...")
@@ -160,7 +160,9 @@ def main():
                 title=bilingual_title,
                 description=bilingual_desc,
                 tags=tags,
-                privacy_status="public"  # Changed to public as requested
+                category_id="10",
+                privacy_status="public",  # Changed to public as requested
+                made_for_kids=True
             )
             
             if video_id:
