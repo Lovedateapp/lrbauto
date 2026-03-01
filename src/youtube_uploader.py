@@ -77,6 +77,33 @@ class YouTubeUploader:
                 bilingual = chinese_title[:100]
         
         return bilingual
+
+    def create_song_seo_title(self, chinese_title: str, english_title: str) -> str:
+        """
+        Build a longer SEO-friendly title for children's songs while
+        keeping YouTube's 100-char limit.
+        """
+        base = self.create_bilingual_title(chinese_title, english_title)
+        extras = [
+            "Happy Birthday Songs",
+            "Kids Songs",
+            "Sing Along",
+            "Nursery Rhymes"
+        ]
+
+        parts = [base]
+        title_lower = base.lower()
+        for extra in extras:
+            if extra.lower() in title_lower:
+                continue
+
+            candidate = " | ".join(parts + [extra])
+            if len(candidate) <= 100:
+                parts.append(extra)
+            else:
+                break
+
+        return " | ".join(parts)[:100]
     
     def create_bilingual_description(self, chinese_title: str, english_title: str,
                                     chinese_desc: str, english_desc: str,
@@ -160,6 +187,9 @@ class YouTubeUploader:
             "kids songs",
             "nursery rhyme",
             "happy song",
+            "happy birthday songs",
+            "happy birthday song for kids",
+            "birthday songs",
             "sweet song",
             "sing along",
             "toddler songs",

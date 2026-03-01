@@ -140,7 +140,10 @@ def main():
                 logger.info(f"Generated summary: {video_summary[:50]}...")
             
             # 5. Create bilingual content (Updated method signature)
-            bilingual_title = uploader.create_bilingual_title(chinese_title, english_title)
+            if metadata.get("content_type") == "song":
+                bilingual_title = uploader.create_song_seo_title(chinese_title, english_title)
+            else:
+                bilingual_title = uploader.create_bilingual_title(chinese_title, english_title)
             tags = uploader.generate_tags(chinese_title, english_title, chinese_tags)
             
             bilingual_desc = uploader.create_bilingual_description(

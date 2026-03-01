@@ -89,6 +89,12 @@ class RemoteVideoProcessor:
     def _normalize_key(self, value: str) -> str:
         return re.sub(r'\s+', ' ', value.strip().lower())
 
+    def _canonical_id(self, value: str) -> str:
+        """
+        Canonical form for duplicate matching across different separators/cases.
+        """
+        return re.sub(r'[\W_]+', '', value.strip().lower(), flags=re.UNICODE)
+
     def _safe_folder_name(self, name: str) -> str:
         safe = "".join(c for c in name if c.isalnum() or c in (' ', '-', '_')).strip()
         if safe:
@@ -191,6 +197,7 @@ class RemoteVideoProcessor:
         ]
         folder_items = [item for item in items if item.get('type') == 'dir']
         candidates = sorted(song_items + direct_mp4_items + folder_items, key=lambda x: x['name'])
+        processed_keys = {self._canonical_id(pid) for pid in processed_ids if pid}
 
         unprocessed = []
         count = 0
@@ -201,7 +208,7 @@ class RemoteVideoProcessor:
 
             # Use item name as the ID
             unique_id = item['name']
-            if unique_id in processed_ids:
+            if unique_id in processed_ids or self._canonical_id(unique_id) in processed_keys:
                 logger.debug(f"Skipping processed: {unique_id}")
                 continue
                 
@@ -211,8 +218,9 @@ class RemoteVideoProcessor:
             safe_name = self._safe_folder_name(unique_id)
             local_folder = os.path.join(self.download_dir, safe_name)
 
-            # Clean up previous failed attempts
-            if os.path.exists(local_folder):
+            # For remote MP4/folder sources, clean old attempts first.
+            # For song assets, keep existing build cache so we can reuse video.mp4.
+            if item['type'] in ('file', 'dir') and os.path.exists(local_folder):
                 shutil.rmtree(local_folder)
             os.makedirs(local_folder, exist_ok=True)
             
@@ -231,6 +239,48 @@ class RemoteVideoProcessor:
                     image_ext = os.path.splitext(urlparse(image_url).path)[1] or '.png'
                     local_audio_path = os.path.join(local_folder, 'audio.mp3')
                     local_image_path = os.path.join(local_folder, f'cover{image_ext.lower()}')
+
+                    # Reuse previously built song video if available.
+                    if os.path.isfile(local_video_path) and os.path.getsize(local_video_path) > 0:
+                        if os.path.isfile(local_metadata_path):
+                            try:
+                                with open(local_metadata_path, 'r', encoding='utf-8') as f:
+                                    metadata = json.load(f)
+                            except Exception:
+                                metadata = {}
+                        if not metadata:
+                            display_title = self._pretty_title(unique_id)
+                            metadata = {
+                                "id": unique_id,
+                                "title": display_title,
+                                "description": (
+                                    f"{display_title} is a sweet and happy children's song. "
+                                    "Great for sing-along time at home, preschool, and kindergarten."
+                                ),
+                                "url": audio_url,
+                                "tags": [
+                                    "children songs",
+                                    "kids songs",
+                                    "happy birthday songs",
+                                    "birthday songs",
+                                    "nursery rhyme",
+                                    "happy song",
+                                    "sweet song",
+                                    "sing along"
+                                ],
+                                "content_type": "song",
+                                "source_audio": item['audio_name'],
+                                "source_image": item['image_name']
+                            }
+                        logger.info(f"Reusing prebuilt song video for {unique_id}")
+                        unprocessed.append({
+                            'folder_name': unique_id,
+                            'folder_path': local_folder,
+                            'video_path': local_video_path,
+                            'metadata': metadata
+                        })
+                        count += 1
+                        continue
 
                     if not self.download_file(audio_url, local_audio_path):
                         logger.warning(f"Failed to download audio for {unique_id}, skipping.")
@@ -257,6 +307,8 @@ class RemoteVideoProcessor:
                         "tags": [
                             "children songs",
                             "kids songs",
+                            "happy birthday songs",
+                            "birthday songs",
                             "nursery rhyme",
                             "happy song",
                             "sweet song",
