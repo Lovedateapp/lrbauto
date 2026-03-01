@@ -5,6 +5,7 @@ import googleapiclient.errors
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 import logging
+import re
 
 logger = logging.getLogger("LRBAuto")
 
@@ -84,12 +85,22 @@ class YouTubeUploader:
         keeping YouTube's 100-char limit.
         """
         base = self.create_bilingual_title(chinese_title, english_title)
-        extras = [
-            "Happy Birthday Songs",
-            "Kids Songs",
-            "Sing Along",
-            "Nursery Rhymes"
-        ]
+        is_birthday = self._is_birthday_song(chinese_title, english_title)
+        if is_birthday:
+            extras = [
+                "Happy Birthday Songs",
+                "Birthday Song for Kids",
+                "Sing Along",
+                "Nursery Rhymes"
+            ]
+        else:
+            topic = self._extract_topic_phrase(chinese_title, english_title)
+            extras = [
+                f"{topic} Song",
+                "Kids Songs",
+                "Sing Along",
+                "Nursery Rhymes"
+            ]
 
         parts = [base]
         title_lower = base.lower()
@@ -187,9 +198,6 @@ class YouTubeUploader:
             "kids songs",
             "nursery rhyme",
             "happy song",
-            "happy birthday songs",
-            "happy birthday song for kids",
-            "birthday songs",
             "sweet song",
             "sing along",
             "toddler songs",
@@ -199,6 +207,18 @@ class YouTubeUploader:
             "儿歌",
             "快乐儿歌"
         ]
+        if self._is_birthday_song(chinese_title, english_title):
+            defaults.extend([
+                "happy birthday songs",
+                "happy birthday song for kids",
+                "birthday songs"
+            ])
+        else:
+            topic = self._extract_topic_phrase(chinese_title, english_title)
+            defaults.extend([
+                f"{topic} song",
+                f"{topic} kids song"
+            ])
         tags.extend(defaults)
         
         # 5. Filter duplicates
@@ -273,3 +293,23 @@ class YouTubeUploader:
         except Exception as e:
             logger.error(f"Error uploading video: {e}")
             return None
+    def _is_birthday_song(self, chinese_title: str, english_title: str) -> bool:
+        title_text = f"{chinese_title} {english_title}".lower()
+        birthday_markers = [
+            "happy birthday",
+            "birthday",
+            "生日",
+            "生日快乐",
+            "祝你生日快乐"
+        ]
+        return any(marker in title_text for marker in birthday_markers)
+
+    def _extract_topic_phrase(self, chinese_title: str, english_title: str) -> str:
+        """
+        Extract a short topic phrase from title for non-birthday SEO keywords.
+        """
+        candidates = re.findall(r"[A-Za-z]+", english_title or "")
+        filtered = [w for w in candidates if len(w) > 2 and w.lower() not in {"song", "kids", "kid"}]
+        if filtered:
+            return " ".join(filtered[:3]).title()
+        return chinese_title.strip() or "Kids"

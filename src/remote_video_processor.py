@@ -95,6 +95,11 @@ class RemoteVideoProcessor:
         """
         return re.sub(r'[\W_]+', '', value.strip().lower(), flags=re.UNICODE)
 
+    def _is_birthday_song(self, title: str) -> bool:
+        title_text = title.lower()
+        birthday_markers = ["happy birthday", "birthday", "生日", "生日快乐", "祝你生日快乐"]
+        return any(marker in title_text for marker in birthday_markers)
+
     def _safe_folder_name(self, name: str) -> str:
         safe = "".join(c for c in name if c.isalnum() or c in (' ', '-', '_')).strip()
         if safe:
@@ -258,16 +263,26 @@ class RemoteVideoProcessor:
                                     "Great for sing-along time at home, preschool, and kindergarten."
                                 ),
                                 "url": audio_url,
-                                "tags": [
-                                    "children songs",
-                                    "kids songs",
-                                    "happy birthday songs",
-                                    "birthday songs",
-                                    "nursery rhyme",
-                                    "happy song",
-                                    "sweet song",
-                                    "sing along"
-                                ],
+                                "tags": (
+                                    [
+                                        "children songs",
+                                        "kids songs",
+                                        "happy birthday songs",
+                                        "birthday songs",
+                                        "nursery rhyme",
+                                        "happy song",
+                                        "sweet song",
+                                        "sing along"
+                                    ] if self._is_birthday_song(display_title) else [
+                                        "children songs",
+                                        "kids songs",
+                                        "nursery rhyme",
+                                        "happy song",
+                                        "sweet song",
+                                        "sing along",
+                                        f"{display_title} song"
+                                    ]
+                                ),
                                 "content_type": "song",
                                 "source_audio": item['audio_name'],
                                 "source_image": item['image_name']
@@ -304,16 +319,26 @@ class RemoteVideoProcessor:
                             "Great for sing-along time at home, preschool, and kindergarten."
                         ),
                         "url": audio_url,
-                        "tags": [
-                            "children songs",
-                            "kids songs",
-                            "happy birthday songs",
-                            "birthday songs",
-                            "nursery rhyme",
-                            "happy song",
-                            "sweet song",
-                            "sing along"
-                        ],
+                        "tags": (
+                            [
+                                "children songs",
+                                "kids songs",
+                                "happy birthday songs",
+                                "birthday songs",
+                                "nursery rhyme",
+                                "happy song",
+                                "sweet song",
+                                "sing along"
+                            ] if self._is_birthday_song(display_title) else [
+                                "children songs",
+                                "kids songs",
+                                "nursery rhyme",
+                                "happy song",
+                                "sweet song",
+                                "sing along",
+                                f"{display_title} song"
+                            ]
+                        ),
                         "content_type": "song",
                         "source_audio": item['audio_name'],
                         "source_image": item['image_name']
