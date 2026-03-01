@@ -17,21 +17,31 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
-      - name: Install system dependencies (FFmpeg)
+      - name: Ensure FFmpeg is available
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "ffmpeg already installed: $(ffmpeg -version | head -n 1)"
+          else
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
+      - name: Cache Whisper model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/whisper
+          key: ${{ runner.os }}-whisper-small-v1
 
       - name: Install Python dependencies
         run: |
-          pip install -r requirements.txt
-          # Setup whisper cache to avoid re-downloading model every time if possible? 
-          # GitHub action cache might be needed for the 500MB+ model if bandwidth is an issue, 
-          # but for now standard download is fine.
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
 
       - name: Run Orchestrator
         env:
