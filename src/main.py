@@ -81,27 +81,30 @@ def main():
         logger.info(f"Processing candidate: {chinese_title}")
         
         # --- Similarity Check ---
-        is_similar, match_info = check_similarity(chinese_title, history)
-        if is_similar:
-            logger.warning(
-                f"Skipping video '{chinese_title}' (ID: {folder_name}) - "
-                f"It is {match_info['similarity']*100:.1f}% similar to processed video "
-                f"'{match_info['title']}' (ID: {match_info['id']})"
-            )
-            
-            # Mark it as processed so we don't try to download it again
-            # We don't save its metadata as a reference to keep the reference pool clean? 
-            # Actually, saving it helps prevent processing duplicates of duplicates.
-            mark_video_downloaded(folder_name, history, metadata)
-            
-            # Clean up local files if remote
-            if remote_video_url:
-                import shutil
-                if os.path.exists(video_info['folder_path']):
-                    shutil.rmtree(video_info['folder_path'])
-                    logger.info(f"Cleaned up skipped video files: {video_info['folder_path']}")
-            
-            continue
+        if metadata.get("content_type") != "song":
+            is_similar, match_info = check_similarity(chinese_title, history)
+            if is_similar:
+                logger.warning(
+                    f"Skipping video '{chinese_title}' (ID: {folder_name}) - "
+                    f"It is {match_info['similarity']*100:.1f}% similar to processed video "
+                    f"'{match_info['title']}' (ID: {match_info['id']})"
+                )
+
+                # Mark it as processed so we don't try to download it again
+                # We don't save its metadata as a reference to keep the reference pool clean?
+                # Actually, saving it helps prevent processing duplicates of duplicates.
+                mark_video_downloaded(folder_name, history, metadata)
+
+                # Clean up local files if remote
+                if remote_video_url:
+                    import shutil
+                    if os.path.exists(video_info['folder_path']):
+                        shutil.rmtree(video_info['folder_path'])
+                        logger.info(f"Cleaned up skipped video files: {video_info['folder_path']}")
+
+                continue
+        else:
+            logger.info("Skipping fuzzy similarity check for song content; exact ID dedup only.")
         # ------------------------
         
         logger.info(f"Processing video: {chinese_title}")
