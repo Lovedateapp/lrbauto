@@ -62,6 +62,7 @@ jobs:
           REMOTE_VIDEO_URL: "https://chat.ainewskit.com/mp3tomp4/"
           REBUILD_SONGS: ${{ github.event.inputs.rebuild_songs || 'false' }}
           DOWNLOAD_LIMIT_PER_RUN: ${{ github.event.inputs.download_limit_per_run || '1' }}
+          YOUTUBE_MADE_FOR_KIDS: "false"
         run: python -m src.main
 
       - name: Commit history

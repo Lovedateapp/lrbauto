@@ -20,6 +20,7 @@ def main():
     remote_video_url = os.environ.get("REMOTE_VIDEO_URL", "https://chat.ainewskit.com/mp3tomp4/") # Default to MP3+image assets
     download_limit_per_run = int(os.environ.get("DOWNLOAD_LIMIT_PER_RUN", "1"))
     rebuild_songs = os.environ.get("REBUILD_SONGS", "false").strip().lower() in ("1", "true", "yes")
+    youtube_made_for_kids = os.environ.get("YOUTUBE_MADE_FOR_KIDS", "false").strip().lower() in ("1", "true", "yes")
 
     if not all([youtube_client_secret, youtube_refresh_token]):
         logger.error("Missing environment variables. Please check YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN.")
@@ -170,7 +171,7 @@ def main():
                 tags=tags,
                 category_id="10",
                 privacy_status="public",  # Changed to public as requested
-                made_for_kids=True
+                made_for_kids=youtube_made_for_kids
             )
             
             if video_id:

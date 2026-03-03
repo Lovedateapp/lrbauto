@@ -240,7 +240,7 @@ class YouTubeUploader:
         return unique_tags[:45]
     
     def upload_video(self, file_path, title, description, category_id="10",
-                    privacy_status="private", tags=None, made_for_kids=True):
+                    privacy_status="private", tags=None, made_for_kids=False):
         """
         Uploads a video to YouTube.
         
