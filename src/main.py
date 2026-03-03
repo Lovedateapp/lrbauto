@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from src.utils import load_history, mark_video_downloaded, is_video_downloaded, check_similarity
+from src.utils import load_history, mark_video_downloaded, is_video_downloaded, check_similarity, clear_song_history
 from src.local_video_processor import LocalVideoProcessor
 from src.remote_video_processor import RemoteVideoProcessor
 from src.subtitle_gen import SubtitleGenerator
@@ -13,14 +13,13 @@ from deep_translator import GoogleTranslator
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("LRBAuto")
 
-# Constants
-DOWNLOAD_LIMIT_PER_RUN = 1  # Process 1 video per run
-
 def main():
     # Load configuration from environment variables
     youtube_client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET")
     youtube_refresh_token = os.environ.get("YOUTUBE_REFRESH_TOKEN")
     remote_video_url = os.environ.get("REMOTE_VIDEO_URL", "https://chat.ainewskit.com/mp3tomp4/") # Default to MP3+image assets
+    download_limit_per_run = int(os.environ.get("DOWNLOAD_LIMIT_PER_RUN", "1"))
+    rebuild_songs = os.environ.get("REBUILD_SONGS", "false").strip().lower() in ("1", "true", "yes")
 
     if not all([youtube_client_secret, youtube_refresh_token]):
         logger.error("Missing environment variables. Please check YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN.")
@@ -34,6 +33,9 @@ def main():
 
     # Initialize components
     history = load_history()
+    if rebuild_songs:
+        removed_count = clear_song_history(history, song_url_hint="/mp3tomp4/")
+        logger.info(f"REBUILD_SONGS enabled: cleared {removed_count} song entries from history.")
     
     # Choose processor
     if remote_video_url:
@@ -55,7 +57,7 @@ def main():
     processed_ids = history.get("downloaded_ids", [])
     
     # Find unprocessed videos (Remote processor handles downloading logic internally)
-    unprocessed_videos = processor.get_unprocessed_videos(processed_ids, limit=DOWNLOAD_LIMIT_PER_RUN)
+    unprocessed_videos = processor.get_unprocessed_videos(processed_ids, limit=download_limit_per_run)
     
     if not unprocessed_videos:
         logger.info("No new videos to process.")
@@ -66,7 +68,7 @@ def main():
     videos_processed = 0
     
     for video_info in unprocessed_videos:
-        if videos_processed >= DOWNLOAD_LIMIT_PER_RUN:
+        if videos_processed >= download_limit_per_run:
             break
         
         folder_name = video_info['folder_name']

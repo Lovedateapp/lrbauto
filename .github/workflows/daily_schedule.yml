@@ -5,6 +5,15 @@ on:
     # Runs at 00:00, 08:00, 16:00 UTC (3 times a day, 8 hours apart)
     - cron: '0 0,8,16 * * *'
   workflow_dispatch: # Allow manual triggering
+    inputs:
+      rebuild_songs:
+        description: "Rebuild/reupload all songs as Shorts (clears song history first)"
+        required: false
+        default: "false"
+      download_limit_per_run:
+        description: "How many items to process in this run"
+        required: false
+        default: "1"
 
 jobs:
   sync:
@@ -51,6 +60,8 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           REMOTE_VIDEO_URL: "https://chat.ainewskit.com/mp3tomp4/"
+          REBUILD_SONGS: ${{ github.event.inputs.rebuild_songs || 'false' }}
+          DOWNLOAD_LIMIT_PER_RUN: ${{ github.event.inputs.download_limit_per_run || '1' }}
         run: python -m src.main
 
       - name: Commit history

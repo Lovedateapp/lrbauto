@@ -56,6 +56,35 @@ def mark_video_downloaded(video_id: str, history: Dict, metadata: Optional[Dict]
         
     save_history(history)
 
+def clear_song_history(history: Dict, song_url_hint: str = "/mp3tomp4/") -> int:
+    """
+    Remove song-related processed entries from history so they can be rebuilt/reuploaded.
+
+    Returns:
+        int: number of removed IDs.
+    """
+    processed_metadata = history.get("processed_metadata", {})
+    downloaded_ids = history.get("downloaded_ids", [])
+
+    song_ids = []
+    for video_id, meta in processed_metadata.items():
+        url = str(meta.get("url", ""))
+        title = str(meta.get("title", ""))
+        vid = str(video_id)
+        if song_url_hint in url or "happy birthday" in title.lower() or "happy birthday" in vid.lower():
+            song_ids.append(video_id)
+
+    if not song_ids:
+        return 0
+
+    song_id_set = set(song_ids)
+    history["downloaded_ids"] = [vid for vid in downloaded_ids if vid not in song_id_set]
+    history["processed_metadata"] = {
+        vid: meta for vid, meta in processed_metadata.items() if vid not in song_id_set
+    }
+    save_history(history)
+    return len(song_ids)
+
 def clean_filename(title):
     keepcharacters = (' ','.','_')
     return "".join(c for c in title if c.isalnum() or c in keepcharacters).rstrip()
