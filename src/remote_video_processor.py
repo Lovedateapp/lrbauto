@@ -152,14 +152,15 @@ class RemoteVideoProcessor:
 
     def _create_video_from_song_assets(self, image_path: str, audio_path: str, output_path: str) -> bool:
         """
-        Create an MP4 video from a still image and an MP3 audio track.
+        Create a vertical (9:16) MP4 video from a still image and an MP3 audio track.
+        This is optimized for YouTube Shorts rendering.
         """
         cmd = [
             'ffmpeg', '-y',
             '-loop', '1',
             '-i', image_path,
             '-i', audio_path,
-            '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
+            '-vf', 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,format=yuv420p',
             '-c:v', 'libx264',
             '-preset', 'medium',
             '-tune', 'stillimage',
@@ -269,6 +270,8 @@ class RemoteVideoProcessor:
                                         "kids songs",
                                         "happy birthday songs",
                                         "birthday songs",
+                                        "shorts",
+                                        "youtube shorts",
                                         "nursery rhyme",
                                         "happy song",
                                         "sweet song",
@@ -276,6 +279,8 @@ class RemoteVideoProcessor:
                                     ] if self._is_birthday_song(display_title) else [
                                         "children songs",
                                         "kids songs",
+                                        "shorts",
+                                        "youtube shorts",
                                         "nursery rhyme",
                                         "happy song",
                                         "sweet song",
@@ -325,6 +330,8 @@ class RemoteVideoProcessor:
                                 "kids songs",
                                 "happy birthday songs",
                                 "birthday songs",
+                                "shorts",
+                                "youtube shorts",
                                 "nursery rhyme",
                                 "happy song",
                                 "sweet song",
@@ -332,6 +339,8 @@ class RemoteVideoProcessor:
                             ] if self._is_birthday_song(display_title) else [
                                 "children songs",
                                 "kids songs",
+                                "shorts",
+                                "youtube shorts",
                                 "nursery rhyme",
                                 "happy song",
                                 "sweet song",

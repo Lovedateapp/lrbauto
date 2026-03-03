@@ -114,7 +114,10 @@ class YouTubeUploader:
             else:
                 break
 
-        return " | ".join(parts)[:100]
+        seo_title = " | ".join(parts)[:100]
+        if "#shorts" not in seo_title.lower() and len(seo_title) + len(" #Shorts") <= 100:
+            seo_title += " #Shorts"
+        return seo_title
     
     def create_bilingual_description(self, chinese_title: str, english_title: str,
                                     chinese_desc: str, english_desc: str,
@@ -196,6 +199,8 @@ class YouTubeUploader:
         defaults = [
             "children songs",
             "kids songs",
+            "shorts",
+            "youtube shorts",
             "nursery rhyme",
             "happy song",
             "sweet song",
